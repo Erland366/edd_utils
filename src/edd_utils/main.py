@@ -7,6 +7,11 @@ def import_libraries(*args):
     for arg in args:
         exec(f"{arg}", globals())
 
+def test_import():
+    import_libraries("import numpy as np")
+
+    print(np.array([1, 2, 3, 4, 5]))
+
 def ProfCallback():
     import_libraries("from transformers import TrainerCallback", "import torch")
 
