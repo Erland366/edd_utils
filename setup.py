@@ -20,5 +20,5 @@ setup(
         'Programming Language :: Python :: 3.11',
     ],
     python_requires='>=3.7',  
-    package_dir={"", "src"},
+    package_dir={"" "src"},
 )
