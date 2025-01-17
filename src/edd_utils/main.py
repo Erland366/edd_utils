@@ -304,7 +304,7 @@ def ProfCallback(
                 torch.cuda.memory._record_memory_history()
 
         def on_step_end(self, args, state, control, **kwargs):
-            if state.epoch < 1 and state.global_step == (self.wait_steps + self.warmup_steps + self.active_steps):
+            if state.epoch < 1 and state.global_step == (self.wait_steps + self.warmup_steps + self.active_steps + 1):
                 print("Stopping memory recording...")
                 torch.cuda.memory._record_memory_history(enabled=False)
 
