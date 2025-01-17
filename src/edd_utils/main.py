@@ -117,13 +117,34 @@ def trace_handler(
     if world_size > 1:
         torch.distributed.barrier()
 
-def ProfCallback():
+DEFAULT_TRACE_OPTS: dict = {
+    "profile_memory": True,
+    "with_stack": True,
+    "record_shapes": True,
+    "with_flops": True,
+}
+
+def ProfCallback(
+    cpu: bool = True,
+    cuda: bool = True,
+    profile_memory: bool = DEFAULT_TRACE_OPTS["profile_memory"],
+    with_stack: bool = DEFAULT_TRACE_OPTS["with_stack"],
+    record_shapes: bool = DEFAULT_TRACE_OPTS["record_shapes"],
+    with_flops: bool = DEFAULT_TRACE_OPTS["with_flops"],
+    # `torch.profiler.schedule` args - note we defer setting these to enable more fine-grained
+    # warnings within this setup function
+    wait_steps: Optional[int] = None,
+    warmup_steps: Optional[int] = None,
+    active_steps: Optional[int] = None,
+    num_cycles: Optional[int] = None,
+    output_dir: Optional[str] = None,
+):
     import_libraries(
         "from transformers import TrainerCallback", 
         "import torch", 
         "from torch._C._profiler import _ExperimentalConfig",
         "from pathlib import Path",
-        "from collections import partial"
+        "from functools import partial"
     )
 
     PROFILER_KEY = "profiler"
@@ -139,20 +160,12 @@ def ProfCallback():
         "num_cycles": 1,
     }
 
-    DEFAULT_TRACE_OPTS: dict = {
-        "profile_memory": True,
-        "with_stack": True,
-        "record_shapes": True,
-        "with_flops": True,
-    }
 
     DEFAULT_PROFILE_DIR: str = "profiler_output"
 
     class prof_callback(TrainerCallback):
         def __init__(
             self, 
-            prof, 
-            profiler_schedule,
             cpu: bool = True,
             cuda: bool = True,
             profile_memory: bool = DEFAULT_TRACE_OPTS["profile_memory"],
@@ -254,7 +267,7 @@ def ProfCallback():
             # this callback will be triggered after **each** profiling cycle
             callback = partial(trace_handler, output_dir=output_dir)
 
-            profiler = torch.profiler.profile(
+            prof = torch.profiler.profile(
                 activities=activities,
                 profile_memory=profile_memory,
                 with_stack=with_stack,
@@ -266,18 +279,19 @@ def ProfCallback():
             )
 
             self.prof = prof
-            self.profiler_schedule = profiler_schedule
+            self.schedule_args =schedule_args 
 
-            self.wait_steps = profiler_schedule["wait_steps"]
-            self.warmup_steps = profiler_schedule["warmup_steps"]
-            self.active_steps = profiler_schedule["active_steps"]
-            self.repeat = profiler_schedule["num_cycles"]
+            self.wait_steps = schedule_args["wait_steps"]
+            self.warmup_steps = schedule_args["warmup_steps"]
+            self.active_steps = schedule_args["active_steps"]
+            self.repeat = schedule_args["num_cycles"]
 
             self.current_repeat = 0
             self.is_rank_zero = False
 
         def on_train_begin(self, args , state, control, **kwargs):
             self.is_rank_zero = args.local_rank in [-1, 0]
+            self.prof.start()
 
         def on_step_begin(self, args, state, control, **kwargs):
             if not self.is_rank_zero:
@@ -296,7 +310,16 @@ def ProfCallback():
 
             self.prof.step()
 
-    return prof_callback
+        def on_train_end(self, args, state, control, **kwargs):
+            self.prof.stop()
+
+    sig = inspect.signature(ProfCallback)
+    passed_args = {
+        k: v
+        for k, v in locals().items()
+        if k in sig.parameters and k != "self"
+    }
+    return prof_callback(**passed_args)
 
 
 def create_dynamic_function(source, function_name, original_func=None, filename_prefix="<dynamic>"):
