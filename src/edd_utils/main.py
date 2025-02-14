@@ -1,10 +1,20 @@
 # Profiler code was taken from https://github.com/pytorch/torchtune/blob/890deab3029eef65f94cedb37fda14479f65f129/torchtune/training/_profiler.py
 # But now it is implemented for TrainerCallback
+from __future__ import annotations
+
 import linecache
 import os
 import re
 import inspect
-from typing import Optional
+from typing import Optional, Union
+
+__all__ = [
+    "trace_handler",
+    "get_world_size_and_rank",
+    "tensor_to_latex",
+    "create_dynamic_function",
+    "ProfCallback"
+]
 
 def import_libraries(*args):
     for arg in args:
@@ -123,6 +133,130 @@ DEFAULT_TRACE_OPTS: dict = {
     "record_shapes": True,
     "with_flops": True,
 }
+
+def tensor_array_to_latex(tensor: Union["torch.Tensor", "jax.Array", np.ndarray]):
+    """
+    Converts a PyTorch Tensor, JAX Array, or NumPy array of any dimension
+    into a LaTeX string representation suitable for inline math or a single row matrix.
+
+    Args:
+        tensor: The input tensor or array-like object.
+
+    Returns:
+        str: A LaTeX string representing the array elements separated by ' & ' and
+             ending with ' \\\\\n'.  Suitable for embedding in LaTeX math environments.
+             Numbers are rounded to 3 decimal places.
+    """
+
+    if isinstance(tensor, np.ndarray):
+        M_np = tensor
+    else:
+        try:
+            import_libraries("import torch")
+            if isinstance(tensor, torch.Tensor):
+                M_np = tensor.detach().cpu().numpy() 
+            else:
+                raise TypeError("Input tensor must be a NumPy array, PyTorch Tensor, or JAX Array")
+        except ImportError:
+            try:
+                import_libraries("import jax.numpy as jnp") 
+                if isinstance(tensor, jnp.ndarray): 
+                    M_np = np.array(tensor) 
+                else:
+                    raise TypeError("Input tensor must be a NumPy array, PyTorch Tensor, or JAX Array")
+            except ImportError:
+                raise TypeError("Input tensor must be a NumPy array, PyTorch Tensor, or JAX Array")
+
+
+    M_np = np.array(M_np).flatten() 
+    M_np = np.round(M_np, 3) 
+    M_str_list = [f"{x:.3f}" for x in M_np] 
+    latex_row = " & ".join(M_str_list) 
+    return latex_row + r" \\" + "\n" 
+
+
+def tensor_matrix_to_latex(tensor: Union["torch.Tensor", "jax.Array", np.ndarray]):
+    """
+    Converts a PyTorch Tensor, JAX Array, or NumPy array of any dimension
+    into a LaTeX string representation of a matrix environment. For dimensions higher than 2,
+    it will represent them as stacked matrices.
+
+    Args:
+        tensor: The input tensor or array-like object.
+
+    Returns:
+        str: A LaTeX string representing the array within a 'bmatrix' environment.
+             Rows are separated by ' \\\\\n' and elements in each row by ' & '.
+             Numbers are rounded to 3 decimal places.
+    """
+    if isinstance(tensor, np.ndarray):
+        M_np = tensor
+    else:
+        try:
+            import_libraries("import torch")
+            if isinstance(tensor, torch.Tensor):
+                M_np = tensor.detach().cpu().numpy() # Move to CPU and convert to NumPy
+            else:
+                raise TypeError("Input tensor must be a NumPy array, PyTorch Tensor, or JAX Array")
+        except ImportError:
+            try:
+                import_libraries("import jax.numpy as jnp") # Use jax.numpy as jnp to avoid namespace issues
+                if isinstance(tensor, jnp.ndarray): # Check against jnp.ndarray not jax.Array which is abstract
+                    M_np = np.array(tensor) # Convert JAX array to NumPy array
+                else:
+                    raise TypeError("Input tensor must be a NumPy array, PyTorch Tensor, or JAX Array")
+            except ImportError:
+                raise TypeError("Input tensor must be a NumPy array, PyTorch Tensor, or JAX Array")
+
+
+    M_np = np.array(M_np) # Ensure it's a NumPy array for consistent handling
+
+    def format_row(row):
+        row = np.round(row, 3)
+        row_str_list = [f"{x:.3f}" for x in row]
+        return " & ".join(row_str_list)
+
+    def process_dimension(arr):
+        if arr.ndim <= 1: # Treat 1D or scalar as a single row
+            return format_row(arr) + r" \\" + "\n"
+        elif arr.ndim == 2: # Standard 2D matrix
+            buffer = ""
+            for row in arr:
+                buffer += format_row(row)
+                buffer += r" \\" + "\n"
+            return buffer
+        else: # Handle higher dimensions recursively, stacking matrices
+            buffer = ""
+            for slice_ in arr: # Iterate over the first dimension
+                buffer += process_dimension(slice_) # Recursively process sub-dimensions
+                buffer += r"\\ \hline" + "\n" # Add horizontal line between "matrices"
+            return buffer
+
+    matrix_body = process_dimension(M_np)
+    latex_matrix = r"\begin{bmatrix}" + "\n" + matrix_body.rstrip() + r"\end{bmatrix}"
+    return latex_matrix
+
+
+def tensor_to_latex(tensor: Union["torch.Tensor", "jax.Array", np.ndarray], matrix_env: bool = True):
+    """
+    Converts a PyTorch Tensor, JAX Array, or NumPy array of any dimension
+    into a LaTeX string representation.
+
+    Args:
+        tensor: The input tensor or array-like object.
+        matrix_env: If True (default), returns LaTeX in a 'bmatrix' environment for matrices.
+                    If False, returns LaTeX for a single row array (inline math style).
+
+    Returns:
+        str: A LaTeX string representing the tensor/array.
+             Numbers are rounded to 3 decimal places.
+    """
+    if matrix_env:
+        return tensor_matrix_to_latex(tensor)
+    else:
+        return tensor_array_to_latex(tensor)
+
+
 
 def ProfCallback(
     cpu: bool = True,
