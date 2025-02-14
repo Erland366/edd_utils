@@ -6,6 +6,7 @@ import linecache
 import os
 import re
 import inspect
+import numpy as np
 from typing import Optional, Union
 
 __all__ = [
