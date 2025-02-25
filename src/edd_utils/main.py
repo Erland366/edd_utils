@@ -17,6 +17,8 @@ __all__ = [
     "ProfCallback"
 ]
 
+
+
 def import_libraries(*args):
     for arg in args:
         exec(f"{arg}", globals())
@@ -457,7 +459,7 @@ def ProfCallback(
     return prof_callback(**passed_args)
 
 
-def create_dynamic_function(source, function_name, original_func=None, filename_prefix="<dynamic>"):
+def create_dynamic_function(source, function_name, target_class=None, original_func=None, filename_prefix="<dynamic>"):
     """
     We assume that we already patch the function, the rest step is to just call 
     `exec(source, globals())`. This is to enable `inspect.getsource` on the patched function.
@@ -492,5 +494,8 @@ def create_dynamic_function(source, function_name, original_func=None, filename_
         lines,
         filename,
     )
+
+    if target_class is not None:
+        setattr(target_class, function_name, func)
 
     return func
