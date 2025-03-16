@@ -499,3 +499,25 @@ def create_dynamic_function(source, function_name, target_class=None, original_f
         setattr(target_class, function_name, func)
 
     return func
+
+def take_subset_and_upload(
+    dataset_name_or_path: str,
+    output_path: str,
+    subset_size: int=10_000,
+    eval_subset_size: int=1_000
+):
+    from datasets import load_dataset, Dataset, DatasetDict
+
+    fineweb_edu_dataset = load_dataset(dataset_name_or_path, streaming=True, split="train")
+
+    train_dataset = list(fineweb_edu_dataset.take(subset_size))
+    list_train_dataset = list(train_dataset)
+    list_train_dataset = [{"text" : x["text"]} for x in list_train_dataset]
+
+    shuffled_dataset = fineweb_edu_dataset.shuffle(seed=42, buffer_size=10_000)
+    eval_dataset = shuffled_dataset.take(eval_subset_size)
+    list_eval_dataset = list(eval_dataset)
+    list_eval_dataset = [{"text" : x["text"]} for x in list_eval_dataset]
+
+    new_dataset = DatasetDict({"train": Dataset.from_list(list_train_dataset), "dev": Dataset.from_list(list_eval_dataset)})
+    new_dataset.push_to_hub(output_path)
