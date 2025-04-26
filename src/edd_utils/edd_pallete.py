@@ -77,7 +77,7 @@ def register_edd_style():
 
     qual_pallete =  register_edd_pallete()
 
-    modern_font = 'Helvetica Neue'  # or 'Arial', 'Lato', 'Roboto'
+    modern_font = 'Inter'  # or 'Arial', 'Lato', 'Roboto'
 
     try:
         color_cycle = qual_pallete
@@ -92,7 +92,7 @@ def register_edd_style():
     edd_modern_style = {
         # --- Font Settings ---
         "font.family": "sans-serif",
-        "font.sans-serif": [modern_font],
+        "font.sans-serif": [modern_font, 'Arial', 'DejaVu Sans', 'Liberation Sans', 'sans-serif'],
         "font.size": 12,             # Base font size
         "axes.titlesize": 16,        # Title font size
         "axes.labelsize": 14,        # Axis label font size
