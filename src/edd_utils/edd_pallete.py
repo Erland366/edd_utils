@@ -69,3 +69,99 @@ def register_edd_pallete():
 
     print("Custom 'edd' palettes module loaded and colormaps registered.")
 
+def register_edd_style():
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+
+
+    modern_font = 'Helvetica Neue'  # or 'Arial', 'Lato', 'Roboto'
+
+    try:
+        global qual_palette
+        color_cycle = qual_palette
+    except AttributeError:
+        print("Warning: Could not load 'qual_palette' from edd_palettes.")
+        print("Using default Matplotlib color cycle instead.")
+        # Fallback to a default mpl cycle if edd_palettes isn't found/correct
+        color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+
+    # Define the rcParams dictionary for the 'edd_modern' style
+    edd_modern_style = {
+        # --- Font Settings ---
+        "font.family": "sans-serif",
+        "font.sans-serif": [modern_font],
+        "font.size": 12,             # Base font size
+        "axes.titlesize": 16,        # Title font size
+        "axes.labelsize": 14,        # Axis label font size
+        "xtick.labelsize": 11,       # X-tick label size
+        "ytick.labelsize": 11,       # Y-tick label size
+        "legend.fontsize": 11,       # Legend font size
+        "figure.titlesize": 18,      # Figure suptitle size
+
+        # --- Color Settings ---
+        "axes.prop_cycle": plt.cycler(color=color_cycle), # Use your qualitative palette
+        "axes.facecolor": "white",   # Background color of the axes area
+        "figure.facecolor": "white", # Background color of the figure area
+        "axes.edgecolor": "lightgray", # Color of the axes border lines (spines)
+        "xtick.color": "dimgray",    # Color of the x-tick marks and labels
+        "ytick.color": "dimgray",    # Color of the y-tick marks and labels
+        "axes.labelcolor": "dimgray", # Color of the axis labels
+        "axes.titlecolor": "black",   # Color of the axes title
+
+        # --- Line and Marker Settings ---
+        "lines.linewidth": 2.0,      # Default line width
+        "lines.markersize": 6,       # Default marker size
+
+        # --- Grid Settings ---
+        "axes.grid": True,           # Enable grid
+        "grid.color": "lightgray",   # Grid line color
+        "grid.linestyle": "--",      # Grid line style
+        "grid.linewidth": 0.7,       # Grid line width
+        "grid.alpha": 0.7,           # Grid line transparency
+
+        # --- Axes Spine Settings (Modern Look - remove top/right) ---
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.spines.left": True,
+        "axes.spines.bottom": True,
+
+        # --- Tick Settings ---
+        "xtick.direction": "out",    # Ticks point outwards
+        "ytick.direction": "out",
+        "xtick.major.size": 5,       # Length of major ticks
+        "xtick.minor.size": 3,       # Length of minor ticks
+        "ytick.major.size": 5,
+        "ytick.minor.size": 3,
+        "xtick.major.width": 0.8,    # Width of major ticks
+        "xtick.minor.width": 0.6,    # Width of minor ticks
+        "ytick.major.width": 0.8,
+        "ytick.minor.width": 0.6,
+        "xtick.major.pad": 7,        # Distance from axis to tick label
+        "ytick.major.pad": 7,
+
+        # --- Figure Layout Settings ---
+        "figure.figsize": (8, 6),    # Default figure size in inches (adjust as needed)
+        "figure.dpi": 100,           # Figure resolution
+        # Tighter layout often looks better
+        "figure.autolayout": True,   # Automatically adjust subplot params for tight layout
+        # Or use constrained layout (newer alternative):
+        # "figure.constrained_layout.use": True,
+
+        # --- Legend Settings ---
+        "legend.frameon": False,     # No frame around the legend
+        "legend.loc": "best",        # Default legend location
+        "legend.borderaxespad": 0.5, # Padding between legend and axes borders
+    }
+
+    # --- Function to Apply the Style ---
+    def apply_style():
+        """Applies the 'edd_modern' style settings to Matplotlib."""
+        try:
+            plt.style.use(edd_modern_style)
+            print("Applied 'edd_modern' plotting style.")
+        except Exception as e:
+            print(f"Error applying 'edd_modern' style: {e}")
+            print("Using default Matplotlib settings.")
+
+    apply_style()
