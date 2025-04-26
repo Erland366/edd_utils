@@ -69,16 +69,18 @@ def register_edd_pallete():
 
     print("Custom 'edd' palettes module loaded and colormaps registered.")
 
+    return qual_palette
+
 def register_edd_style():
     import matplotlib.pyplot as plt
     import matplotlib as mpl
 
+    qual_pallete =  register_edd_style()
 
     modern_font = 'Helvetica Neue'  # or 'Arial', 'Lato', 'Roboto'
 
     try:
-        global qual_palette
-        color_cycle = qual_palette
+        color_cycle = qual_pallete
     except AttributeError:
         print("Warning: Could not load 'qual_palette' from edd_palettes.")
         print("Using default Matplotlib color cycle instead.")
