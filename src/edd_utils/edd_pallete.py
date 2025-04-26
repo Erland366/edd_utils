@@ -75,7 +75,7 @@ def register_edd_style():
     import matplotlib.pyplot as plt
     import matplotlib as mpl
 
-    qual_pallete =  register_edd_style()
+    qual_pallete =  register_edd_pallete()
 
     modern_font = 'Helvetica Neue'  # or 'Arial', 'Lato', 'Roboto'
 
