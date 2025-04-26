@@ -6,30 +6,46 @@ def register_edd_pallete():
     seq_colors_hex = [
         "#e0f2f7", "#cce8e3", "#9bc4bc", "#6b8e8a", "#405d5b",
     ]
-    seq_cmap_name = "edd_sequential_gb" # Renamed for clarity under 'edd' umbrella
+    seq_cmap_name = "edd_sequential_gb"
 
+    # 2. Diverging Palette (Green-Blue to Orange via Neutral)
     div_colors_hex = [
         "#405d5b", "#9bc4bc", "#f0f0f0", "#fdbb84", "#fc8d59",
     ]
-    div_cmap_name = "edd_diverging_gb_orange" # Renamed
+    div_cmap_name = "edd_diverging_gb_orange"
 
-    qual_colors_hex = [
-        "#a6cee3", "#b2df8a", "#fdbf6f", "#cab2d6", "#ffff99",
-        "#fb9a99", "#e3a1c2", "#bdbdbd",
+    # 3. Qualitative Palette (Distinct Darker Pastels)
+    # Using manually chosen darker hex codes directly
+    qual_colors_hex_darker = [
+        "#5295ba",  # Darker Blue
+        "#6ab04c",  # Darker Green
+        "#f39c12",  # Darker Orange
+        "#8e44ad",  # Darker Purple
+        "#f1c40f",  # Darker Yellow/Gold
+        "#e74c3c",  # Darker Red
+        "#a569bd",  # Darker Mauve/Purple
+        "#7f8c8d",  # Darker Gray
     ]
-    qual_palette = sns.color_palette(qual_colors_hex)
-    qual_palette_name = "edd_qualitative_pastel" # Name for reference
+    # Create the Seaborn palette list directly for easy access
+    qual_palette = sns.color_palette(qual_colors_hex_darker) # Now this is the main qualitative palette
+    qual_palette_name = "edd_qualitative_darker" # Updated name
 
+    # Removed the programmatic darkening section and qual_palette_dark variable
+
+    # 4. Cyclic Palette (Green-Blue Loop) - Renumbered
     cyc_colors_hex = [
         "#405d5b", "#7baca5", "#cce8e3", "#a1c9d5", "#6b8e8a",
     ]
     cyc_cmap_name = "edd_cyclic_gb"
 
 
+    # --- Create Colormap Objects ---
+    # These are the Matplotlib colormap objects
     sequential_cmap = mcolors.LinearSegmentedColormap.from_list(seq_cmap_name, seq_colors_hex)
     diverging_cmap = mcolors.LinearSegmentedColormap.from_list(div_cmap_name, div_colors_hex)
     cyclic_cmap = mcolors.LinearSegmentedColormap.from_list(cyc_cmap_name, cyc_colors_hex)
 
+    # --- Registration Function ---
     def register_all():
         """Registers all continuous colormaps defined in this module."""
         cmaps_to_register = {
@@ -42,25 +58,20 @@ def register_edd_pallete():
 
         for name, cmap in cmaps_to_register.items():
             try:
+                # Check if it already exists before trying to register
                 if name not in matplotlib.colormaps:
                     matplotlib.colormaps.register(cmap=cmap)
                     registered_count += 1
                 else:
+                    # Already registered, maybe from a previous import in the same session
                     skipped_count +=1
 
             except Exception as e:
                 # Catch potential issues during registration
                 print(f"Warning: Could not register colormap '{name}'. Error: {e}")
 
-        if registered_count > 0:
-            print(f"Registered {registered_count} custom 'edd' colormaps.")
-        if skipped_count > 0:
-            # This is normal if the module is re-imported in the same session
-            # print(f"Skipped registration for {skipped_count} 'edd' colormaps (already registered).")
-            pass
-
-
-    register_all()
+    # --- Automatically Register on Import ---
+    register_all() # Register the colormaps when the module is imported
 
     n_continuous = 11
     seq_palette_list = sns.color_palette(seq_cmap_name, n_colors=n_continuous)
