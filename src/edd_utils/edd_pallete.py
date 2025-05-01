@@ -87,6 +87,19 @@ def register_edd_style():
     import matplotlib as mpl
 
     qual_pallete =  register_edd_pallete()
+    import matplotlib.pyplot as plt
+    import scienceplots
+    import colorsys
+    plt.style.use(["science", "grid"])
+    cmap = plt.cm.Set3.colors
+    textwidth = 3.31314
+    aspect_ratio = 6/8
+    scale = 2.0
+    width = textwidth * scale
+    height = width * aspect_ratio
+    dpi = 300
+    plt.rcParams['figure.figsize'] = [width, height]
+    plt.rcParams['figure.dpi'] = dpi
 
     modern_font = 'Inter'  # or 'Arial', 'Lato', 'Roboto'
 
